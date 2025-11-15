@@ -5,7 +5,99 @@ format: typst
 
 ### 2024 Election Results and the 2024 District Map
 
+Q: For the 2024 general election, calculate the mean-median score and efficiency gap associated with the 2024 map of congressional districts. You should have everything you need in your cleaned precinct-level data frame. Record your code and results in `gerrymandering-metrics.qmd`
+
+```{r}
+#mean-median score 
+district_sum <- votes_2024 |>
+    group_by(CDDIST) |>
+    summarize(
+        dem_total = sum(CNGDEM01, CNGDEM02, na.rm = TRUE),
+        rep_total = sum(CNGREP01, CNGREP02, na.rm = TRUE),
+        total = dem_total + rep_total
+    ) |>
+    mutate(dem_share = dem_total/total, rep_share = rep_total/total)
+
+mean_median_dem <- mean(district_sum$dem_share) - median(district_sum$dem_share)
+mean_median_rep <- mean(district_sum$rep_share) - median(district_sum$rep_share)
+
+mean_median_dem
+mean_median_rep
+```
+
+```{r}
+#efficiency gap 
+district_sum <- district_sum %>%
+  mutate(
+    dem_won = (dem_total > rep_total) * 1,   #1 if dem won, 0 if loss
+    rep_won = (rep_total > dem_total) * 1,   #1 if rep won, 0 if loss
+    dem_wasted = dem_won * (dem_total - (total/2 + 1)) + (1 - dem_won) * dem_total, #if won: count extras; if loss: count all 
+    rep_wasted = rep_won * (rep_total - (total/2 + 1)) + (1 - rep_won) * rep_total #if won: count extras; if loss: count all
+  )
+
+#efficiency = (total of one party - total of the other party) / total votes casted
+efficiency_gap <- (sum(district_sum$rep_wasted) - sum(district_sum$dem_wasted)) / sum(district_sum$total)
+efficiency_gap
+
+#pos = dem has advantage / rep wasted more
+#neg = rep has advantage / dem wasted more 
+```
 
 
 ### 2024 Election Results and the proposed 2025 District Map
 
+Calculate what the election results would have been had the 2024 election been run using the district map proposed in AB 604. There are two approaches that can be taken. Both require that you use voting data collected at the level of “SR Precinct” instead of “SV Precinct” (the former unit is always geographical
+while the latter is not).
+
+```{r}
+#assign using centroid
+sr_to_ab604 <- sr_shp |>
+  st_centroid() |>
+  st_join(ab604) |>       
+  select(SRPREC_KEY, DISTRICT)
+
+#votes & disctricts 
+sr_joined <- sr_votes |>
+  left_join(sr_to_ab604, by = "SRPREC_KEY")
+
+district_results <- sr_joined |>
+  group_by(DISTRICT) |>
+  summarize(
+    dem_2 = sum(CNGDEM01 + CNGDEM02, na.rm = TRUE),
+    rep_2 = sum(CNGREP01 + CNGREP02, na.rm = TRUE)
+  ) |>
+  mutate(
+    total_2 = dem_2 + rep_2,
+    dem_share_2 = dem_2 / total_2,
+    rep_share_2 = rep_2 / total_2
+  )
+
+```
+
+
+```{r}
+#mean meadian
+mean_med_dem_2 <- mean(district_results$dem_share_2) - median(district_results$dem_share_2)
+
+mean_med_rep_2 <- mean(district_results$rep_share_2) - median(district_results$rep_share_2)
+
+```
+
+
+```{r}
+#efficiency gap 
+efficiency_2 <- district_results |>
+  mutate(
+    dem_won_2 = (dem_2 > rep_2) * 1,   #1 if dem won, 0 if loss
+    rep_won_2 = (rep_2 > dem_2) * 1,   #1 if rep won, 0 if loss
+    dem_wasted_2 = dem_won_2 * (dem_2 - (total_2/2 + 1)) + (1 - dem_won_2) * dem_2, #if won: count extras; if loss: count all 
+    rep_wasted_2 = rep_won_2 * (rep_2 - (total_2/2 + 1)) + (1 - rep_won_2) * rep_2 #if won: count extras; if loss: count all
+  )
+
+#efficiency = (total of one party - total of the other party) / total votes casted
+efficiency_gap_2 <- (sum(efficiency_2$rep_wasted_2) - sum(district_sum$dem_wasted_2)) / sum(efficiency_2$total_2)
+efficiency_gap_2
+
+#pos = dem has advantage / rep wasted more
+#neg = rep has advantage / dem wasted more 
+```
