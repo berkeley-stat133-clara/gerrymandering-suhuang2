@@ -3,3 +3,82 @@ title: Data Cleaning
 format: typst
 ---
 
+
+```{r}
+library(tidyverse)
+
+install.packages("readxl")
+library(readxl)
+```
+
+```{r}
+#read in file 
+votes_2024 <- read_csv("data/g24_sov_by_g24_svprec.csv")
+
+#see column names & first few rows 
+colnames(votes_2024)
+head(votes_2024)
+
+#replace "*" or "" with NA only in character columns
+votes_2024 <- votes_2024 |>
+    mutate(across(where(is.character), ~ na_if(., "*"))) |>
+    mutate(across(where(is.character), ~ na_if(., ""))) |>
+    mutate(across(where(is.character), as.numeric)) |>
+    distinct()
+#convert to numeric columns 
+```
+
+##5
+
+```{r}
+#load map 
+library(sf)
+ab604 <- st_read("data/AB604/AB604.shp")
+ab604 <- ab604 |>
+    st_transform(crs = 3310) |>
+    st_make_valid()
+```
+
+```{r}
+#load and clean SR csv
+sr_votes <- read_csv("data/state_g24_sov_data_by_g24_srprec 2.csv")
+
+keep <- c("SRPREC_KEY")
+
+sr_votes <- sr_votes |>
+    mutate(across(where(is.character), ~ na_if(., "*"))) |>
+    mutate(across(where(is.character), ~ na_if(., ""))) |>
+    mutate(across(where(is.character) & !all_of(keep), as.numeric)) |>
+    distinct()
+
+```
+
+```{r}
+#load geometries 
+sr_shp <- st_read("data/srprec_state_g24_v01_shp/srprec_state_g24_v01_shp.shp")
+sr_shp <- sr_shp |>
+    st_transform(3310) |> # switch to equal area projection first
+    st_set_precision(1) |> # snap points to 1 m grid
+    st_make_valid() |> # fix self-intersections/bow-ties
+    st_collection_extract("POLYGON")
+```
+
+```{r}
+#area-weighted interpolation 
+
+#area
+sr_shp <- sr_shp |>
+    mutate(area = st_area(geometry))
+
+#join with ab604
+intersection <- st_intersection(sr_shp, ab604 %>% select(DISTRICT)) |>
+    mutate(area_frac = st_area(geometry) / area)
+
+ab604_votes <- intersection |>
+    left_join(sr_votes, by = "SRPREC_KEY") |>
+    group_by(DISTRICT) |>
+    summarize(across(where(is.numeric), ~ sum(.x * as.numeric(area_frac), na.rm = TRUE)))
+
+ab604_votes
+```
+
