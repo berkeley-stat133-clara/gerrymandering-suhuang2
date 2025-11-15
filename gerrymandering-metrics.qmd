@@ -3,6 +3,8 @@ title: Gerrymandering Metrics
 format: typst
 ---
 
+#copied and pasted from positron, was having issues with gitignore
+
 ### 2024 Election Results and the 2024 District Map
 
 Q: For the 2024 general election, calculate the mean-median score and efficiency gap associated with the 2024 map of congressional districts. You should have everything you need in your cleaned precinct-level data frame. Record your code and results in `gerrymandering-metrics.qmd`
