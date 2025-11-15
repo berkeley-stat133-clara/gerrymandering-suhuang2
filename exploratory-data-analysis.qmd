@@ -5,24 +5,62 @@ format: typst
 
 ### Question 1
 
-Put your question here.
+How many precincts/counties/districts only had one candidate from a given party (only considering republicans or democrats)?
 
 ### Answer 1
 
-Put your answer here.
+```{r}
+#identify the candidate vote columns per party
+dem <- c("ASSDEM01", "ASSDEM02", "CNGDEM01", "CNGDEM02", "PRSDEM01")
+
+rep <- c("ASSREP01", "ASSREP02", "CNGREP01", "CNGREP02", "PRSREP01")
+
+#count candidates with votes per precinct
+votes_2024_1 <- votes_2024 |>
+  mutate(
+    dem_candidates = rowSums(across(all_of(dem)) > 0, na.rm = TRUE),
+    rep_candidates = rowSums(across(all_of(rep)) > 0, na.rm = TRUE)
+  )
+
+#count precincts with only 1 candidate per party
+one_dem_precincts <- sum(votes_2024_1$dem_candidates == 1)
+one_rep_precincts <- sum(votes_2024_1$rep_candidates == 1)
+
+one_dem_precincts
+one_rep_precincts
+
+```
 
 ### Question 2
 
-Put your question here.
+Did all registered voters' vote get casted/did they vote?
 
 ### Answer 2
 
-Put your answer here.
+Not all registered voters voted.
+
+```{r}
+votes_2024_2 <- votes_2024 |>
+    select(starts_with("TOT")) |>
+    colSums(na.rm = TRUE) 
+```
 
 ### Question 3
 
-Put your question here.
+Which precinct had the biggest blowout in the State Senate race (by party)?
 
 ### Answer 3
 
-Put your answer here.
+```{r}
+votes_2024_3 <- votes_2024 %>%
+  mutate(
+    total_dem = SENDEM01 + SENDEM02,
+    total_rep = SENREP01 + SENREP02,
+    margin = abs(total_dem - total_rep)
+  )
+
+biggest_blowout <- votes_2024_3 %>%
+  filter(margin == max(margin, na.rm = TRUE))
+
+biggest_blowout
+```
