@@ -2,4 +2,37 @@
 title: Dashboard
 format: dashboard
 ---
+## Row 
 
+```{r}
+#2
+#not sure how to generate the 2024 map with the link provided since it only allows me to download individual districts 
+
+#3
+#summarize 2024
+mean_median_dem
+mean_median_rep
+efficiency_gap
+
+dem_seats_obs_1 <- sum(district_sum$dem_share > 0.5)
+rep_seats_obs_1 <- sum(district_sum$rep_share > 0.5)
+
+#summary for new districts 
+mean_med_dem_2
+mean_med_rep_2
+efficiency_gap_2
+
+dem_seats_obs <- sum(district_results$dem_share_2 > 0.5)
+rep_seats_obs <- sum(district_results$rep_share_2 > 0.5)
+
+#pos = dem has advantage / rep wasted more
+#neg = rep has advantage / dem wasted more
+```
+
+## Row 
+
+```{r}
+#4 / Methology 
+#data source: statewide database 
+#data cleaning procedure: replaced all asterisks (and possible empty cells) with NA,  converted strings to numeric (only the necessary ones that would be used), removed duplicates using distinct()
+```
