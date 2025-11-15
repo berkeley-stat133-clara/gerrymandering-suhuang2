@@ -3,6 +3,9 @@ title: Exploratory Data Analysis
 format: typst
 ---
 
+#copied and pasted from positron, was having issues with gitignore
+
+
 ### Question 1
 
 How many precincts/counties/districts only had one candidate from a given party (only considering republicans or democrats)?
